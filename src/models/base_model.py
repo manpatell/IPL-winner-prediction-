@@ -19,7 +19,7 @@ from config import MODELS_DIR, RANDOM_STATE, CV_FOLDS
 FEATURE_COLS = [
     # Toss
     "toss_won_by_team1", "toss_decision_bat",
-    # All-time win rate (Bayesian-smoothed — fair for new franchises)
+    # All-time win rate (Bayesian-smoothed, cumulative — no leakage)
     "t1_alltime_wr", "t2_alltime_wr", "wr_diff",
     # Last 3 seasons win rate — reflects CURRENT strength, not 15yr legacy
     "t1_last3yr_wr", "t2_last3yr_wr", "last3yr_wr_diff",
@@ -29,12 +29,17 @@ FEATURE_COLS = [
     "t1_season_form", "t2_season_form",
     # Head-to-head (last 3 seasons)
     "h2h_t1_wr",
-    # Venue
+    # Venue win rates
     "t1_venue_wr", "t2_venue_wr", "venue_wr_diff",
     # Home advantage
     "t1_is_home", "t2_is_home",
-    # Recent titles only (last 5 seasons) — NOT all-time count
+    # Recent titles (last 5 seasons only)
     "t1_recent_titles", "t2_recent_titles", "recent_title_diff",
+    # Venue pitch features (new)
+    "venue_avg_score", "venue_toss_impact", "venue_size",
+    # Team batting/bowling strength — causal features (new)
+    "t1_batting_str", "t2_batting_str", "batting_str_diff",
+    "t1_bowling_str", "t2_bowling_str", "bowling_str_diff",
 ]
 TARGET_COL = "team1_won"
 
