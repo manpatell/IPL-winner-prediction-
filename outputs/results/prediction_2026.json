@@ -1,66 +1,72 @@
 {
   "season": 2026,
-  "method": "Stacking Ensemble + Bayesian Prior Update",
+  "method": "Stacking Ensemble + Current-Strength Bayesian Update",
+  "weights": {
+    "squad": 0.4,
+    "recent_form": 0.3,
+    "model": 0.25,
+    "playoff": 0.05
+  },
   "rankings": [
     {
       "rank": 1,
-      "team_id": "CSK",
-      "team_name": "Chennai Super Kings",
-      "win_probability": 17.22
+      "team_id": "RCB",
+      "team_name": "Royal Challengers Bengaluru",
+      "win_probability": 12.53
     },
     {
       "rank": 2,
-      "team_id": "MI",
-      "team_name": "Mumbai Indians",
-      "win_probability": 14.67
+      "team_id": "KKR",
+      "team_name": "Kolkata Knight Riders",
+      "win_probability": 11.75
     },
     {
       "rank": 3,
-      "team_id": "KKR",
-      "team_name": "Kolkata Knight Riders",
-      "win_probability": 12.78
+      "team_id": "MI",
+      "team_name": "Mumbai Indians",
+      "win_probability": 11.43
     },
     {
       "rank": 4,
-      "team_id": "RCB",
-      "team_name": "Royal Challengers Bengaluru",
+      "team_id": "RR",
+      "team_name": "Rajasthan Royals",
       "win_probability": 11.32
     },
     {
       "rank": 5,
-      "team_id": "RR",
-      "team_name": "Rajasthan Royals",
-      "win_probability": 9.07
+      "team_id": "CSK",
+      "team_name": "Chennai Super Kings",
+      "win_probability": 10.75
     },
     {
       "rank": 6,
-      "team_id": "DC",
-      "team_name": "Delhi Capitals",
-      "win_probability": 8.96
+      "team_id": "SRH",
+      "team_name": "Sunrisers Hyderabad",
+      "win_probability": 9.77
     },
     {
       "rank": 7,
-      "team_id": "SRH",
-      "team_name": "Sunrisers Hyderabad",
-      "win_probability": 7.92
+      "team_id": "LSG",
+      "team_name": "Lucknow Super Giants",
+      "win_probability": 9.56
     },
     {
       "rank": 8,
-      "team_id": "PBKS",
-      "team_name": "Punjab Kings",
-      "win_probability": 6.96
+      "team_id": "GT",
+      "team_name": "Gujarat Titans",
+      "win_probability": 9.07
     },
     {
       "rank": 9,
-      "team_id": "GT",
-      "team_name": "Gujarat Titans",
-      "win_probability": 6.24
+      "team_id": "DC",
+      "team_name": "Delhi Capitals",
+      "win_probability": 7.36
     },
     {
       "rank": 10,
-      "team_id": "LSG",
-      "team_name": "Lucknow Super Giants",
-      "win_probability": 4.87
+      "team_id": "PBKS",
+      "team_name": "Punjab Kings",
+      "win_probability": 6.47
     }
   ]
 }
