@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtualenv
+venv/
+env/
+.venv/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Data outputs (generated - not committed to keep repo lean)
+data/raw/*.csv
+data/raw/*.json
+data/processed/
+data/db/
+
+# Model artifacts (large binary files)
+outputs/models/
+outputs/results/*.png
+
+# Keep prediction results JSON
+!outputs/results/prediction_2026.json
+!outputs/results/model_results.json
