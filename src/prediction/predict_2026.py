@@ -20,8 +20,8 @@ import pandas as pd
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from config import (
-    ACTIVE_TEAMS_2026, FEATURES_CSV, RESULTS_DIR, MODELS_DIR,
-    RANDOM_STATE,
+    ACTIVE_TEAMS_2026, FEATURES_CSV, PROCESSED_MATCHES_CSV,
+    RESULTS_DIR, MODELS_DIR, RANDOM_STATE,
 )
 from src.models.base_model import FEATURE_COLS
 from src.features.engineer import (
@@ -208,6 +208,9 @@ def predict_2026_winner(use_ensemble: bool = True) -> list:
     from src.models.lightgbm_model       import LightGBMModel
     from src.models.neural_network_model import NeuralNetworkModel
 
+    # Load matches CSV (has 'winner' column) for win-rate computations
+    matches_df = pd.read_csv(PROCESSED_MATCHES_CSV)
+    # Load features CSV (used by model)
     df = pd.read_csv(FEATURES_CSV)
 
     if use_ensemble:
@@ -223,7 +226,7 @@ def predict_2026_winner(use_ensemble: bool = True) -> list:
         model.load()
 
     print("\nSimulating IPL 2026 round-robin matchups...")
-    model_probs = simulate_tournament(model, df)
+    model_probs = simulate_tournament(model, matches_df)
 
     print("Applying Bayesian update with domain priors...")
     final_probs = bayesian_update(model_probs)
