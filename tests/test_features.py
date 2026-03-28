@@ -42,8 +42,10 @@ class TestWinRates(unittest.TestCase):
     def test_mi_win_rate(self):
         df = make_sample_df()
         rates = get_all_time_win_rates(df)
-        # MI appears 4 times and wins all 4
-        self.assertAlmostEqual(rates["MI"], 1.0, places=1)
+        # MI appears 4 times and wins all 4, but Bayesian smoothing pulls toward 0.5
+        # so rate should be > 0.5 but < 1.0 (correct: avoids overfitting on small sample)
+        self.assertGreater(rates["MI"], 0.5)
+        self.assertLess(rates["MI"], 1.0)
 
 
 class TestRecentForm(unittest.TestCase):

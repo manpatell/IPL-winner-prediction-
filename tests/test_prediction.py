@@ -71,9 +71,10 @@ class TestRankPredictions(unittest.TestCase):
                 rankings[i]["win_probability"],
             )
 
-    def test_rank_1_is_csk(self):
+    def test_rank_1_has_highest_probability(self):
         probs = self._make_probs()
         rankings = rank_predictions(probs)
+        # Highest probability team is rank 1 (CSK was given 0.3 in this test fixture)
         self.assertEqual(rankings[0]["team_id"], "CSK")
 
     def test_probabilities_sum_to_100(self):
