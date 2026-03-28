@@ -1,35 +1,42 @@
 {
   "random_forest": {
-    "cv_accuracy": 0.8895,
-    "cv_std": 0.0619,
-    "train_accuracy": 0.9921,
-    "test_accuracy": 0.8438,
-    "test_roc_auc": 0.9323
+    "cv_accuracy": 0.6324,
+    "cv_std": 0.0223,
+    "train_accuracy": 0.9461,
+    "test_accuracy": 0.6324,
+    "test_roc_auc": 0.6689
   },
   "xgboost": {
-    "cv_accuracy": 0.9132,
-    "cv_std": 0.0573,
-    "train_accuracy": 1.0,
-    "test_accuracy": 0.875,
-    "test_roc_auc": 0.9479
+    "cv_accuracy": 0.6428,
+    "cv_std": 0.0192,
+    "train_accuracy": 0.9994,
+    "test_accuracy": 0.6029,
+    "test_roc_auc": 0.6464
   },
   "lightgbm": {
-    "cv_accuracy": 0.9055,
-    "cv_std": 0.0393,
-    "train_accuracy": 1.0,
-    "test_accuracy": 0.875,
-    "test_roc_auc": 0.9583
+    "cv_accuracy": 0.6452,
+    "cv_std": 0.036,
+    "train_accuracy": 0.9926,
+    "test_accuracy": 0.6225,
+    "test_roc_auc": 0.6602
   },
   "neural_network": {
-    "cv_accuracy": 0.8658,
-    "cv_std": 0.0588,
-    "train_accuracy": 1.0,
-    "test_accuracy": 0.875,
-    "test_roc_auc": 0.9479
+    "cv_accuracy": 0.5981,
+    "cv_std": 0.0156,
+    "train_accuracy": 0.9994,
+    "test_accuracy": 0.5637,
+    "test_roc_auc": 0.6163
+  },
+  "extra_trees": {
+    "cv_accuracy": 0.6342,
+    "cv_std": 0.0275,
+    "train_accuracy": 0.9681,
+    "test_accuracy": 0.6471,
+    "test_roc_auc": 0.6953
   },
   "ensemble": {
     "train_accuracy": 1.0,
-    "test_accuracy": 0.875,
-    "test_roc_auc": 0.9427
+    "test_accuracy": 0.5735,
+    "test_roc_auc": 0.6509
   }
 }
