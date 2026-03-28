@@ -61,9 +61,40 @@ def add_toss_features(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def add_season_order(df: pd.DataFrame) -> pd.DataFrame:
-    """Add a running 'game_number' within each season for each team."""
+    """Sort by season and match_id to ensure temporal ordering."""
     df = df.sort_values(["season", "match_id"]).reset_index(drop=True)
     return df
+
+
+def mirror_matches(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Fixes the 73% class imbalance by adding a mirrored copy of every match.
+
+    For every match (team1 vs team2, winner=team1), we add the equivalent row
+    with team1/team2 swapped and winner flipped. This:
+      - Doubles the dataset size
+      - Makes class distribution exactly 50/50
+      - Eliminates position bias (the model can't learn 'team1 always wins')
+      - Is statistically legitimate: (A beat B) is the same information as (B lost to A)
+
+    The mirrored rows get negative match_ids to distinguish them from originals.
+    """
+    mirrored = df.copy()
+    mirrored["match_id"]        = -mirrored["match_id"]
+    mirrored["team1"]           = df["team2"]
+    mirrored["team2"]           = df["team1"]
+    mirrored["toss_winner"]     = df["toss_winner"]  # unchanged (still same team)
+    mirrored["toss_won_by_team1"] = 1 - df["toss_won_by_team1"]  # flip toss flag
+    mirrored["team1_won"]       = 1 - df["team1_won"]
+
+    combined = pd.concat([df, mirrored], ignore_index=True)
+    combined = combined.sort_values(["season", "match_id"]).reset_index(drop=True)
+
+    orig_pos = df["team1_won"].mean()
+    new_pos  = combined["team1_won"].mean()
+    print(f"  Class balance before mirroring: {orig_pos:.2%} team1 wins")
+    print(f"  Class balance  after mirroring: {new_pos:.2%} team1 wins (target: 50%)")
+    return combined
 
 
 def save_processed(df: pd.DataFrame):
@@ -80,6 +111,7 @@ def run_preprocessing() -> pd.DataFrame:
     df = add_binary_target(df)
     df = add_toss_features(df)
     df = add_season_order(df)
+    df = mirror_matches(df)
     save_processed(df)
     return df
 
