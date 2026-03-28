@@ -39,8 +39,11 @@ def compute_shap_values(model_instance, df: pd.DataFrame):
         explainer   = shap.TreeExplainer(model)
         shap_values = explainer.shap_values(X)
         # For binary classification, shap_values may be a list [class0, class1]
+        # or a 3D array of shape (n_samples, n_features, n_classes)
         if isinstance(shap_values, list):
             shap_values = shap_values[1]
+        elif hasattr(shap_values, "ndim") and shap_values.ndim == 3:
+            shap_values = shap_values[:, :, 1]
         return shap_values, X
     except Exception as e:
         print(f"Could not compute SHAP values: {e}")
