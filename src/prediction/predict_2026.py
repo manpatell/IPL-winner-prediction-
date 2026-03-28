@@ -40,6 +40,10 @@ from src.features.engineer import (
     get_h2h_rate, get_venue_win_rate, is_home_ground,
     RECENT_TITLES_5YR,
 )
+from src.features.venue_features import (
+    get_venue_avg_score, get_venue_toss_impact, get_venue_size,
+)
+from src.features.team_strength import get_team_strength_features
 
 # ─── 2026 Squad Strength (0–10 scale) ────────────────────────────────────────
 # Based on: player retentions, auction buys, captain quality,
@@ -158,6 +162,15 @@ def build_matchup_features(team1: str, team2: str, df: pd.DataFrame) -> pd.DataF
                 t1_rt = RECENT_TITLES_5YR.get(team1, 0)
                 t2_rt = RECENT_TITLES_5YR.get(team2, 0)
 
+                # Venue pitch features
+                v_avg_score   = get_venue_avg_score(venue)
+                v_toss_impact = get_venue_toss_impact(venue)
+                v_size        = get_venue_size(venue)
+
+                # Team batting/bowling strength for 2024 (most recent season)
+                t1_str = get_team_strength_features(team1, 2024)
+                t2_str = get_team_strength_features(team2, 2024)
+
                 f = {
                     "toss_won_by_team1": toss_t1,
                     "toss_decision_bat": toss_bat,
@@ -181,6 +194,15 @@ def build_matchup_features(team1: str, team2: str, df: pd.DataFrame) -> pd.DataF
                     "t1_recent_titles":  t1_rt,
                     "t2_recent_titles":  t2_rt,
                     "recent_title_diff": t1_rt - t2_rt,
+                    "venue_avg_score":   v_avg_score,
+                    "venue_toss_impact": v_toss_impact,
+                    "venue_size":        v_size,
+                    "t1_batting_str":    t1_str["batting_strength"],
+                    "t2_batting_str":    t2_str["batting_strength"],
+                    "batting_str_diff":  t1_str["batting_strength"] - t2_str["batting_strength"],
+                    "t1_bowling_str":    t1_str["bowling_strength"],
+                    "t2_bowling_str":    t2_str["bowling_strength"],
+                    "bowling_str_diff":  t1_str["bowling_strength"] - t2_str["bowling_strength"],
                 }
                 features_list.append(f)
 
