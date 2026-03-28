@@ -1,0 +1,35 @@
+{
+  "random_forest": {
+    "cv_accuracy": 0.8745,
+    "cv_std": 0.0558,
+    "train_accuracy": 0.9843,
+    "test_accuracy": 0.8438,
+    "test_roc_auc": 0.9531
+  },
+  "xgboost": {
+    "cv_accuracy": 0.9058,
+    "cv_std": 0.0391,
+    "train_accuracy": 1.0,
+    "test_accuracy": 0.875,
+    "test_roc_auc": 0.9531
+  },
+  "lightgbm": {
+    "cv_accuracy": 0.8822,
+    "cv_std": 0.0558,
+    "train_accuracy": 1.0,
+    "test_accuracy": 0.875,
+    "test_roc_auc": 0.9583
+  },
+  "neural_network": {
+    "cv_accuracy": 0.8818,
+    "cv_std": 0.0702,
+    "train_accuracy": 1.0,
+    "test_accuracy": 0.8438,
+    "test_roc_auc": 0.9062
+  },
+  "ensemble": {
+    "train_accuracy": 1.0,
+    "test_accuracy": 0.875,
+    "test_roc_auc": 0.9583
+  }
+}
