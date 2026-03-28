@@ -1,5 +1,5 @@
 """
-Stacking Ensemble model combining RF, XGBoost, LightGBM, and Neural Network.
+Stacking Ensemble model combining RF, XGBoost, LightGBM, Neural Network, and ExtraTrees.
 Uses a Logistic Regression meta-learner on top of base model probability outputs.
 """
 import sys
@@ -15,6 +15,7 @@ from src.models.random_forest_model import RandomForestModel
 from src.models.xgboost_model import XGBoostModel
 from src.models.lightgbm_model import LightGBMModel
 from src.models.neural_network_model import NeuralNetworkModel
+from src.models.extra_trees_model import ExtraTreesModel
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold, cross_val_score
@@ -25,7 +26,7 @@ from sklearn.preprocessing import StandardScaler
 class EnsembleModel:
     """
     Stacking ensemble:
-      Level 0: RF + XGBoost + LightGBM + NeuralNetwork
+      Level 0: RF + XGBoost + LightGBM + NeuralNetwork + ExtraTrees
       Level 1: Logistic Regression meta-learner
     """
     name = "ensemble"
@@ -36,6 +37,7 @@ class EnsembleModel:
             XGBoostModel(),
             LightGBMModel(),
             NeuralNetworkModel(),
+            ExtraTreesModel(),
         ]
         self.meta_learner = LogisticRegression(
             C=1.0, random_state=RANDOM_STATE, max_iter=500,
@@ -89,7 +91,7 @@ class EnsembleModel:
             # Train base models on fold
             fold_bases = [
                 RandomForestModel(), XGBoostModel(),
-                LightGBMModel(), NeuralNetworkModel(),
+                LightGBMModel(), NeuralNetworkModel(), ExtraTreesModel(),
             ]
             meta_train = np.zeros((len(df_train), len(fold_bases)))
             meta_val   = np.zeros((len(df_val),   len(fold_bases)))

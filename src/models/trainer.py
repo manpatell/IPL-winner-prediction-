@@ -14,8 +14,10 @@ from src.models.random_forest_model  import RandomForestModel
 from src.models.xgboost_model        import XGBoostModel
 from src.models.lightgbm_model       import LightGBMModel
 from src.models.neural_network_model import NeuralNetworkModel
+from src.models.extra_trees_model    import ExtraTreesModel
 from src.models.ensemble_model       import EnsembleModel
 from src.models.base_model           import FEATURE_COLS, TARGET_COL
+from src.models.tune                 import load_best_params
 
 
 def load_features() -> pd.DataFrame:
@@ -25,6 +27,19 @@ def load_features() -> pd.DataFrame:
     return pd.read_csv(FEATURES_CSV)
 
 
+def _apply_tuned_params(model, best_params: dict):
+    """Override model hyperparameters with Optuna-tuned values if available."""
+    name_map = {"random_forest": None, "xgboost": "xgboost",
+                "lightgbm": "lightgbm", "neural_network": None, "extra_trees": None}
+    key = name_map.get(model.name)
+    if key and key in best_params and best_params[key]:
+        params = best_params[key]
+        for attr, val in params.items():
+            if hasattr(model.model, attr):
+                setattr(model.model, attr, val)
+        print(f"  Applied {len(params)} tuned params to {model.name}")
+
+
 def train_all(df: pd.DataFrame) -> dict:
     results = {}
 
@@ -32,17 +47,25 @@ def train_all(df: pd.DataFrame) -> dict:
         df, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=df[TARGET_COL]
     )
 
+    best_params = load_best_params()
+    if best_params:
+        print(f"Loaded Optuna-tuned params for: {list(best_params.keys())}")
+
     individual_models = [
         RandomForestModel(),
         XGBoostModel(),
         LightGBMModel(),
         NeuralNetworkModel(),
+        ExtraTreesModel(),
     ]
 
     for model in individual_models:
         print(f"\n{'='*50}")
         print(f"Training: {model.name.upper()}")
         print(f"{'='*50}")
+
+        if best_params:
+            _apply_tuned_params(model, best_params)
 
         cv = model.cross_validate(df_train)
         print(f"  CV accuracy: {cv['cv_mean']:.4f} ± {cv['cv_std']:.4f}")
