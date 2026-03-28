@@ -32,7 +32,7 @@ def mode_setup():
     logger.info("=== SETUP: Creating datasets and populating database ===")
     t0 = time.time()
 
-    from src.data.create_dataset import save_teams_json, save_matches_csv
+    from src.data.create_dataset import save_teams_json, build_all_matches, save_matches_csv
     from src.data.db_setup       import setup_database
     from src.data.ingest         import run_ingestion
     from src.data.preprocess     import run_preprocessing
@@ -40,7 +40,8 @@ def mode_setup():
 
     logger.info("Step 1/5: Generating raw CSV datasets...")
     save_teams_json()
-    save_matches_csv()
+    all_rows = build_all_matches()
+    save_matches_csv(all_rows)
 
     logger.info("Step 2/5: Creating SQLite database schema...")
     setup_database()

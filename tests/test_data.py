@@ -12,11 +12,15 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 class TestDatasetCreation(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        from src.data.create_dataset import build_all_matches
+        cls.MATCHES_DATA = build_all_matches()
+
     def test_matches_csv_creation(self):
-        from src.data.create_dataset import MATCHES_DATA
-        self.assertGreater(len(MATCHES_DATA), 100, "Should have 100+ matches")
+        self.assertGreater(len(self.MATCHES_DATA), 100, "Should have 100+ matches")
         # Each row should have 9 fields
-        for row in MATCHES_DATA[:5]:
+        for row in self.MATCHES_DATA[:5]:
             self.assertEqual(len(row), 9)
 
     def test_teams_json_structure(self):
@@ -25,15 +29,13 @@ class TestDatasetCreation(unittest.TestCase):
         self.assertGreaterEqual(len(TEAMS), 10, "Should have 10 active teams")
 
     def test_season_range(self):
-        from src.data.create_dataset import MATCHES_DATA
-        seasons = {row[0] for row in MATCHES_DATA}
+        seasons = {row[0] for row in self.MATCHES_DATA}
         self.assertIn(2008, seasons)
         self.assertIn(2024, seasons)
         self.assertGreaterEqual(max(seasons), 2024)
 
     def test_all_winners_are_valid_teams(self):
-        from src.data.create_dataset import MATCHES_DATA
-        for row in MATCHES_DATA:
+        for row in self.MATCHES_DATA:
             team1, team2, winner = row[1], row[2], row[3]
             self.assertIn(winner, [team1, team2],
                           f"Winner {winner} not in match: {team1} vs {team2}")
