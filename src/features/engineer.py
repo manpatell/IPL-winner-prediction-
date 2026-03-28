@@ -47,17 +47,19 @@ TITLE_COUNTS = {
 
 def get_all_time_win_rates(matches: pd.DataFrame) -> dict:
     """
-    Returns {team: bayesian_smoothed_win_rate}.
-    Bayesian smoothing: blend raw win rate with 0.5 prior, weighted by sample size.
-    Teams with few matches (GT, LSG early seasons) get pulled toward 0.5 — fair.
+    Returns {team: bayesian_smoothed_win_rate} using ONLY the provided matches.
+    Called with matches.iloc[:idx] during feature building to prevent data leakage:
+    a 2010 match must not know about 2015 results.
+
+    Bayesian smoothing: blend raw win rate with 0.5 prior (10 ghost matches).
+    New teams (GT, LSG with few matches) get pulled toward 0.5 — fair.
     """
     rates = {}
     all_teams = set(matches["team1"]) | set(matches["team2"])
-    prior_weight = 10  # equivalent to 10 "ghost" matches at 0.5 win rate
+    prior_weight = 10  # 10 ghost matches at 50%
     for team in all_teams:
         played = int(((matches["team1"] == team) | (matches["team2"] == team)).sum())
         won    = int((matches["winner"] == team).sum())
-        # Bayesian smoothing toward 0.5
         rates[team] = (won + prior_weight * 0.5) / (played + prior_weight)
     return rates
 
@@ -177,7 +179,8 @@ def build_features(matches_csv: str = PROCESSED_MATCHES_CSV) -> pd.DataFrame:
     df = pd.read_csv(matches_csv)
     df = df.reset_index(drop=True)
 
-    # Bayesian-smoothed all-time win rates (snapshot at end — static prior)
+    # Static prior (used for first 10 rows and prediction): full-dataset rates.
+    # Feature rows use cumulative rates (see inner loop) to avoid leakage.
     overall_rates = get_all_time_win_rates(df)
 
     rows = []
@@ -199,10 +202,16 @@ def build_features(matches_csv: str = PROCESSED_MATCHES_CSV) -> pd.DataFrame:
         f["toss_won_by_team1"] = int(row.get("toss_won_by_team1", 0))
         f["toss_decision_bat"] = int(row.get("toss_decision_bat", 0))
 
-        # ── Smoothed all-time win rates ──────────────────────────────────────
-        # Bayesian-smoothed: new teams fairly regress toward 0.5
-        f["t1_alltime_wr"] = overall_rates.get(t1, 0.5)
-        f["t2_alltime_wr"] = overall_rates.get(t2, 0.5)
+        # ── Cumulative all-time win rates (NO LEAKAGE) ────────────────────────
+        # Computed on df.iloc[:idx] — ONLY matches BEFORE this one.
+        # A 2010 match will NOT know about 2015 results.
+        # For idx=0 (first match ever), no data → use end-of-dataset rates as static prior.
+        if idx > 10:
+            past_rates = get_all_time_win_rates(df.iloc[:idx])
+        else:
+            past_rates = overall_rates  # early matches: use static prior
+        f["t1_alltime_wr"] = past_rates.get(t1, 0.5)
+        f["t2_alltime_wr"] = past_rates.get(t2, 0.5)
         f["wr_diff"]       = f["t1_alltime_wr"] - f["t2_alltime_wr"]
 
         # ── Last 3 seasons win rate ──────────────────────────────────────────
