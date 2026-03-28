@@ -110,7 +110,11 @@ class TestFeatureColumns(unittest.TestCase):
         self.assertIn("t1_alltime_wr", FEATURE_COLS)
         self.assertIn("h2h_t1_wr", FEATURE_COLS)
         self.assertIn("form_diff", FEATURE_COLS)
-        self.assertEqual(len(FEATURE_COLS), 19)
+        self.assertIn("t1_last3yr_wr", FEATURE_COLS)
+        self.assertIn("t1_recent_titles", FEATURE_COLS)
+        self.assertNotIn("t1_titles", FEATURE_COLS)     # all-time titles removed
+        self.assertNotIn("title_diff", FEATURE_COLS)    # biased feature removed
+        self.assertEqual(len(FEATURE_COLS), 22)
 
 
 if __name__ == "__main__":
