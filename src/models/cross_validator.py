@@ -65,13 +65,14 @@ def walk_forward_cv(model_class, df: pd.DataFrame) -> dict:
         preds = model.predict(X_val)
         probs = model.predict_proba(X_val)[:, 1]
 
+        n_classes = len(set(y_val))
         fold_metrics.append({
             "val_season":   val_season,
             "n_train":      len(df_train),
             "n_val":        len(df_val),
             "accuracy":     accuracy_score(y_val, preds),
-            "log_loss":     log_loss(y_val, probs),
-            "roc_auc":      roc_auc_score(y_val, probs) if len(set(y_val)) > 1 else 0.5,
+            "log_loss":     log_loss(y_val, probs, labels=[0, 1]) if n_classes > 1 else 0.0,
+            "roc_auc":      roc_auc_score(y_val, probs) if n_classes > 1 else 0.5,
         })
         print(f"  Season {val_season}: acc={fold_metrics[-1]['accuracy']:.4f} "
               f"auc={fold_metrics[-1]['roc_auc']:.4f} "
