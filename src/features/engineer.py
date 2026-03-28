@@ -20,6 +20,10 @@ from config import (
     PROCESSED_MATCHES_CSV, FEATURES_CSV,
     PROCESSED_DIR, FORM_WINDOW, H2H_WINDOW_SEASONS,
 )
+from src.features.venue_features import (
+    get_venue_avg_score, get_venue_toss_impact, get_venue_size,
+)
+from src.features.team_strength import get_team_strength_features
 
 # Titles won in the LAST 5 SEASONS only (2020–2024).
 # This reflects current dynasty strength, not historical legacy.
@@ -243,11 +247,24 @@ def build_features(matches_csv: str = PROCESSED_MATCHES_CSV) -> pd.DataFrame:
         f["t2_is_home"] = is_home_ground(t2, venue)
 
         # ── Recent titles (last 5 seasons) — NOT all-time ────────────────────
-        # CSK's 5 all-time titles vs GT's 1 is irrelevant; what matters is
-        # who won recently. Window = 5 seasons before this match.
         f["t1_recent_titles"]   = get_recent_titles(t1, season, window=5)
         f["t2_recent_titles"]   = get_recent_titles(t2, season, window=5)
         f["recent_title_diff"]  = f["t1_recent_titles"] - f["t2_recent_titles"]
+
+        # ── Venue pitch features ──────────────────────────────────────────────
+        f["venue_avg_score"]    = get_venue_avg_score(venue)
+        f["venue_toss_impact"]  = get_venue_toss_impact(venue)
+        f["venue_size"]         = get_venue_size(venue)
+
+        # ── Team batting/bowling strength (causal features) ───────────────────
+        t1_str = get_team_strength_features(t1, season)
+        t2_str = get_team_strength_features(t2, season)
+        f["t1_batting_str"]   = t1_str["batting_strength"]
+        f["t2_batting_str"]   = t2_str["batting_strength"]
+        f["batting_str_diff"] = t1_str["batting_strength"] - t2_str["batting_strength"]
+        f["t1_bowling_str"]   = t1_str["bowling_strength"]
+        f["t2_bowling_str"]   = t2_str["bowling_strength"]
+        f["bowling_str_diff"] = t1_str["bowling_strength"] - t2_str["bowling_strength"]
 
         # ── Target ────────────────────────────────────────────────────────────
         f["team1_won"] = int(row["team1_won"])
