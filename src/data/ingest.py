@@ -107,7 +107,51 @@ SEASON_STANDINGS = {
 
 
 def normalize_team(name: str) -> str:
-    return TEAM_ALIASES.get(name, name)
+    if name is None:
+        return ""
+    clean = str(name).strip()
+    return TEAM_ALIASES.get(clean, clean)
+
+
+def _pick_first(row: dict, keys: list, default=""):
+    for key in keys:
+        if key in row and row[key] not in (None, ""):
+            return row[key]
+    return default
+
+
+def _parse_int(value, default=0):
+    try:
+        if value in (None, ""):
+            return default
+        return int(float(value))
+    except (TypeError, ValueError):
+        return default
+
+
+def _parse_season(row: dict) -> int:
+    season_val = _pick_first(row, ["season", "Season"])
+    if season_val not in (None, ""):
+        return _parse_int(season_val, default=0)
+
+    date_val = _pick_first(row, ["date", "Date", "match_date"], default="")
+    if not date_val:
+        return 0
+
+    digits = "".join(ch for ch in str(date_val) if ch.isdigit())
+    if len(digits) >= 4:
+        return int(digits[:4])
+    return 0
+
+
+def _is_playoff_row(row: dict) -> int:
+    stage = str(_pick_first(row, ["match_type", "stage", "type"], default="")).lower()
+    return int(any(tok in stage for tok in ["qualifier", "eliminator", "playoff", "final"]))
+
+
+def _is_final_row(row: dict) -> int:
+    stage = str(_pick_first(row, ["match_type", "stage", "type"], default="")).lower()
+    return int("final" in stage)
 
 
 def ingest_teams(conn, teams_json_path: str):
@@ -152,22 +196,40 @@ def ingest_matches(conn, matches_csv_path: str):
     season_team_wins = defaultdict(lambda: defaultdict(int))
     season_team_matches = defaultdict(lambda: defaultdict(int))
 
-    for row in rows:
-        season = int(row["season"])
-        t1 = row["team1"]
-        t2 = row["team2"]
-        winner = row["winner"]
+    inserted_rows = []
+
+    for idx, row in enumerate(rows, start=1):
+        season = _parse_season(row)
+        if not season:
+            continue
+
+        match_id = _parse_int(_pick_first(row, ["id", "match_id", "ID"]), default=idx)
+        t1 = normalize_team(_pick_first(row, ["team1", "Team1"]))
+        t2 = normalize_team(_pick_first(row, ["team2", "Team2"]))
+        winner = normalize_team(_pick_first(row, ["winner", "Winner"]))
+        toss_winner = normalize_team(_pick_first(row, ["toss_winner", "Toss_Winner"]))
+        toss_decision = str(_pick_first(row, ["toss_decision", "Toss_Decision"], default="")).strip().lower()
+        venue = _pick_first(row, ["venue", "Venue", "ground", "Ground"], default="")
+        win_by_runs = _parse_int(_pick_first(row, ["win_by_runs", "Win_By_Runs"]))
+        win_by_wickets = _parse_int(_pick_first(row, ["win_by_wickets", "Win_By_Wickets"]))
+        is_playoff = _is_playoff_row(row)
+        is_final = _is_final_row(row)
+
+        if not t1 or not t2:
+            continue
+
         conn.execute("""
             INSERT OR IGNORE INTO matches
             (match_id, season, team1, team2, toss_winner, toss_decision,
-             winner, win_by_runs, win_by_wickets, venue)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             winner, win_by_runs, win_by_wickets, venue, is_playoff, is_final)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-            int(row["id"]), season, t1, t2,
-            row["toss_winner"], row["toss_decision"],
-            winner, int(row["win_by_runs"]), int(row["win_by_wickets"]),
-            row["venue"],
+            match_id, season, t1, t2,
+            toss_winner, toss_decision,
+            winner, win_by_runs, win_by_wickets,
+            venue, is_playoff, is_final,
         ))
+        inserted_rows.append((season, match_id, t1, t2, winner, is_playoff, is_final))
         season_team_matches[season][t1] += 1
         season_team_matches[season][t2] += 1
         if winner:
@@ -175,12 +237,29 @@ def ingest_matches(conn, matches_csv_path: str):
 
     conn.commit()
 
-    # Populate season_stats from standings + match counts
-    for season, standings in SEASON_STANDINGS.items():
-        for team, finish in standings:
+    # Populate season_stats from ingested match outcomes
+    season_champions = {}
+    season_finalists = defaultdict(set)
+    for season, _match_id, t1, t2, winner, _is_playoff, is_final in inserted_rows:
+        if is_final:
+            if winner:
+                season_champions[season] = winner
+            season_finalists[season].update([t1, t2])
+
+    for season, team_matches in season_team_matches.items():
+        ranked = sorted(
+            team_matches.keys(),
+            key=lambda t: (season_team_wins[season].get(t, 0), team_matches.get(t, 0)),
+            reverse=True,
+        )
+        top4 = set(ranked[:4])
+
+        for team in team_matches:
             played = season_team_matches[season].get(team, 10)
             wins   = season_team_wins[season].get(team, 0)
             losses = played - wins
+            champion = season_champions.get(season)
+            finalists = season_finalists.get(season, set())
             conn.execute("""
                 INSERT OR REPLACE INTO season_stats
                 (season, team, matches_played, wins, losses, points,
@@ -188,12 +267,12 @@ def ingest_matches(conn, matches_csv_path: str):
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 season, team, played, wins, losses, wins * 2,
-                1,
-                1 if finish <= 2 else 0,
-                1 if finish == 1 else 0,
+                1 if team in top4 else 0,
+                1 if team in finalists else 0,
+                1 if team == champion else 0,
             ))
     conn.commit()
-    print(f"Matches ingested: {len(rows)}")
+    print(f"Matches ingested: {len(inserted_rows)}")
 
 
 def ingest_head_to_head(conn):

@@ -34,13 +34,19 @@ def load_matches() -> pd.DataFrame:
 
 
 def normalize_teams(df: pd.DataFrame) -> pd.DataFrame:
-    """Map old franchise names to current abbreviations."""
-    alias_map = {
-        "DC_OLD": "SRH",   # Deccan Chargers became SRH
-        "RPS":    "CSK",   # Rising Pune Supergiant - treat as neutral
-    }
+    """Normalize team names and keep only active franchises for training."""
+    alias_map = TEAM_ALIASES
     for col in ["team1", "team2", "winner", "toss_winner"]:
         df[col] = df[col].replace(alias_map)
+
+    active = set(ACTIVE_TEAMS_2026)
+    before = len(df)
+    df = df[
+        df["team1"].isin(active)
+        & df["team2"].isin(active)
+        & (df["winner"].isna() | df["winner"].isin(active))
+    ].copy()
+    print(f"  Dropped {before - len(df)} matches with retired/inactive teams")
     return df
 
 

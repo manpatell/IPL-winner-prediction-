@@ -12,13 +12,14 @@ Features generated per match row (team1 vs team2):
 """
 import os
 import sys
+import sqlite3
 import numpy as np
 import pandas as pd
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from config import (
     PROCESSED_MATCHES_CSV, FEATURES_CSV,
-    PROCESSED_DIR, FORM_WINDOW, H2H_WINDOW_SEASONS,
+    PROCESSED_DIR, FORM_WINDOW, H2H_WINDOW_SEASONS, SQLITE_DB_PATH,
 )
 from src.features.venue_features import (
     get_venue_avg_score, get_venue_toss_impact, get_venue_size,
@@ -163,25 +164,38 @@ def get_season_form(matches: pd.DataFrame, team: str, season: int, before_idx: i
     return wins / len(team_matches)
 
 
-def get_recent_titles(team: str, before_season: int, window: int = 5) -> int:
+def load_champions_by_season() -> dict:
+    """Load season champions from SQLite season_stats table."""
+    if not os.path.exists(SQLITE_DB_PATH):
+        return {}
+    conn = sqlite3.connect(SQLITE_DB_PATH)
+    try:
+        rows = conn.execute(
+            "SELECT season, team FROM season_stats WHERE won_title = 1"
+        ).fetchall()
+        return {int(season): team for season, team in rows}
+    finally:
+        conn.close()
+
+
+def get_recent_titles(team: str, before_season: int, champions_by_season: dict,
+                      window: int = 5) -> int:
     """
     Titles won by this team in the `window` seasons before `before_season`.
     Only counts recent wins — treats a 2024 title the same as 2020,
     not stacked against a 2008 title.
     """
-    from src.data.ingest import SEASON_STANDINGS
     count = 0
     for season in range(before_season - window, before_season):
-        standings = SEASON_STANDINGS.get(season, [])
-        for t, finish in standings:
-            if t == team and finish == 1:
-                count += 1
+        if champions_by_season.get(season) == team:
+            count += 1
     return count
 
 
 def build_features(matches_csv: str = PROCESSED_MATCHES_CSV) -> pd.DataFrame:
     df = pd.read_csv(matches_csv)
     df = df.reset_index(drop=True)
+    champions_by_season = load_champions_by_season()
 
     # Static prior (used for first 10 rows and prediction): full-dataset rates.
     # Feature rows use cumulative rates (see inner loop) to avoid leakage.
@@ -247,8 +261,8 @@ def build_features(matches_csv: str = PROCESSED_MATCHES_CSV) -> pd.DataFrame:
         f["t2_is_home"] = is_home_ground(t2, venue)
 
         # ── Recent titles (last 5 seasons) — NOT all-time ────────────────────
-        f["t1_recent_titles"]   = get_recent_titles(t1, season, window=5)
-        f["t2_recent_titles"]   = get_recent_titles(t2, season, window=5)
+        f["t1_recent_titles"]   = get_recent_titles(t1, season, champions_by_season, window=5)
+        f["t2_recent_titles"]   = get_recent_titles(t2, season, champions_by_season, window=5)
         f["recent_title_diff"]  = f["t1_recent_titles"] - f["t2_recent_titles"]
 
         # ── Venue pitch features ──────────────────────────────────────────────
